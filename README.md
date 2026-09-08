@@ -17,40 +17,123 @@ The academic workflow is an original synthesis of openly licensed practices. See
 
 ## Installation
 
-The mainstream installation is a Git clone into the Codex skills directory. Start a new Codex task after installing so the skill index can refresh; restart the app only if it is still not detected.
+This repository is a standalone Agent Skill. Keep `SKILL.md` directly inside the `adaptive-model-router` folder. Git clone is the recommended installation; use the host-specific destination below.
 
-### macOS or Linux
+### Codex
+
+Current Codex documentation uses `~/.agents/skills` for user skills. Older or locally configured installations may use `$CODEX_HOME/skills`; set `CODEX_SKILLS_DIR` when you want to choose the destination explicitly. Repository-scoped skills go in `.agents/skills`.
+
+macOS or Linux, user scope:
 
 ```bash
-skills_dir="${CODEX_HOME:-$HOME/.codex}/skills"
+skills_dir="${CODEX_SKILLS_DIR:-${CODEX_HOME:+$CODEX_HOME/skills}}"
+skills_dir="${skills_dir:-$HOME/.agents/skills}"
 mkdir -p "$skills_dir"
 git clone https://github.com/WENSHAO521/adaptive-model-router.git "$skills_dir/adaptive-model-router"
 ```
 
-To update an existing clone:
-
-```bash
-git -C "${CODEX_HOME:-$HOME/.codex}/skills/adaptive-model-router" pull --ff-only
-```
-
-### Windows PowerShell
+Windows PowerShell, user scope:
 
 ```powershell
-$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
-$skillsDir = Join-Path $codexHome "skills"
+$skillsDir = if ($env:CODEX_SKILLS_DIR) {
+  $env:CODEX_SKILLS_DIR
+} elseif ($env:CODEX_HOME) {
+  Join-Path $env:CODEX_HOME "skills"
+} elseif (Test-Path (Join-Path $HOME ".codex\skills")) {
+  Join-Path $HOME ".codex\skills"
+} else {
+  Join-Path $HOME ".agents\skills"
+}
 New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
 git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
 ```
 
-To update an existing clone:
+Repository scope, from the project root:
+
+```bash
+mkdir -p .agents/skills
+git clone https://github.com/WENSHAO521/adaptive-model-router.git .agents/skills/adaptive-model-router
+```
+
+Update an existing Codex clone:
+
+```bash
+git -C "${CODEX_SKILLS_DIR:-${CODEX_HOME:-$HOME/.agents}/skills}/adaptive-model-router" pull --ff-only
+```
 
 ```powershell
-$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
-$skillsDir = Join-Path $codexHome "skills"
+$skillsDir = if ($env:CODEX_SKILLS_DIR) {
+  $env:CODEX_SKILLS_DIR
+} elseif ($env:CODEX_HOME) {
+  Join-Path $env:CODEX_HOME "skills"
+} elseif (Test-Path (Join-Path $HOME ".codex\skills")) {
+  Join-Path $HOME ".codex\skills"
+} else {
+  Join-Path $HOME ".agents\skills"
+}
 git -C (Join-Path $skillsDir "adaptive-model-router") pull --ff-only
 ```
 
-If Git is unavailable, use GitHub's **Code → Download ZIP**, extract the repository, and place its contents at `$CODEX_HOME/skills/adaptive-model-router` (normally `C:\Users\<you>\.codex\skills\adaptive-model-router` on Windows). Keep `SKILL.md` directly inside that folder.
+Start a new Codex task after installing; restart Codex only if the skill still does not appear.
+
+### Claude Code
+
+Claude Code discovers personal skills from `~/.claude/skills/<skill-name>/SKILL.md` and project skills from `.claude/skills/<skill-name>/SKILL.md`.
+
+macOS or Linux:
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.claude/skills/adaptive-model-router"
+```
+
+Windows PowerShell:
+
+```powershell
+$skillsDir = Join-Path $HOME ".claude\skills"
+New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
+```
+
+Open Claude Code and run `/skills` to confirm discovery. For a project-only install, clone into `.claude/skills/adaptive-model-router` from that project root.
+
+### Gemini CLI
+
+Gemini CLI provides a direct installer:
+
+```bash
+gemini skills install https://github.com/WENSHAO521/adaptive-model-router
+```
+
+The equivalent user-scope Git clone is:
+
+```bash
+mkdir -p "$HOME/.gemini/skills"
+git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.gemini/skills/adaptive-model-router"
+```
+
+Use `/skills list` to verify it and `/skills reload` after an update. Project-only skills go in `.gemini/skills/adaptive-model-router`.
+
+### Other Agent Skills-compatible tools
+
+Tools that follow the open Agent Skills layout generally accept `~/.agents/skills/<skill-name>/SKILL.md` for user scope or `.agents/skills/<skill-name>/SKILL.md` for project scope:
+
+```bash
+mkdir -p "$HOME/.agents/skills"
+git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.agents/skills/adaptive-model-router"
+```
+
+Windows PowerShell:
+
+```powershell
+$skillsDir = Join-Path $HOME ".agents\skills"
+New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
+```
+
+`agents/openai.yaml` is optional Codex metadata. Other hosts use the shared `SKILL.md` frontmatter and ignore that file when they do not support it.
+
+If Git is unavailable, use GitHub's **Code → Download ZIP**, extract the repository, and place its contents in the host's skill directory. Keep `SKILL.md` directly inside the `adaptive-model-router` folder.
 
 No package manager or Python dependency is required at runtime; the skill is Markdown plus YAML and is loaded from the skills directory.
 
