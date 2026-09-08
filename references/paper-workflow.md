@@ -1,6 +1,6 @@
 # Evidence-first paper workflow
 
-Use this reference automatically for academic drafting, revision, literature review, methods planning, and manuscript submission work. It is a platform-neutral synthesis; adapt the order to the target journal and the user's actual evidence.
+Load this reference for evidence-intensive academic drafting, revision, literature review, methods planning, and manuscript submission work. Routine sentence edits need only the bounded polishing branch when this reference is already loaded. It is a platform-neutral synthesis; adapt the order to the target journal and the user's actual evidence.
 
 ## Choose the lightest valid branch
 
@@ -61,7 +61,7 @@ Use PRISMA 2020 as a reporting and checklist branch, not as a substitute for con
 
 For a substantive draft, audit citation reality and claim alignment, methods and results consistency, operational definitions, assumptions, limitations, reproducibility fields, terminology, target-journal structure, references, figures and tables, and anonymization when relevant. Return exact locations, severity, evidence, and a repair recommendation. A red-team pass is useful for material risk; it is not a reason to repeat routine line edits.
 
-Use the root agent as the sole integrator. If delegation is eligible, assign bounded read-only roles such as source verification, argument and methods audit, or journal-compliance audit. Keep one writer per file, one delegation wave per task, and no recursive delegation. Do not automatically write persistent lessons or memory; retain only authorized task artifacts and evidence records.
+Use the root agent as the sole integrator. Apply the [delegation ROI policy](delegation-policy.md) before assigning source verification, argument/methods review, or journal-compliance roles; a manuscript alone does not justify delegation. Use the [routing policy](routing-policy.md) for failure classification and bounded repair. Do not automatically write persistent lessons or memory; retain only authorized task artifacts and evidence records.
 
 ## 8. Submission record
 

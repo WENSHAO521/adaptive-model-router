@@ -1,128 +1,46 @@
 # Adaptive Model Router
 
-An automatic Codex skill for capability-aware model routing, bounded subagent delegation, evidence-first academic writing, quality repair, and controlled expert escalation.
+An Agent Skill defining adaptive model-routing and orchestration policy for hosts with compatible dispatch capabilities. On hosts without dispatch, it guides feasible execution on the active model; it cannot force a model switch. This working tree prepares **v0.2.0**; a version heading does not imply a published tag or release.
 
 ## What it does
 
-- Activates implicitly for model choice, research, coding, manuscript work, and multi-stage tasks.
-- Discovers the host's available model IDs and reasoning levels at runtime.
-- Prefers the least-cost capable GPT-5-family model under the active policy.
-- Delegates separable complex work automatically when collaboration tools and useful parallel work are available.
-- Uses one bounded delegation wave per user task and keeps the root agent responsible for integration and validation.
-- Applies an evidence-first paper workflow: frame the contribution, search and verify sources, map claims to evidence, check methods and reproducibility, and audit the final manuscript.
-- Uses a PRISMA-aware branch for systematic reviews without forcing PRISMA onto ordinary papers.
-- Escalates to GPT-6 only after a validated GPT-5-family attempt and targeted repair, unless the user explicitly selects GPT-6 or Max mode.
+For model selection, complex coding, multi-stage research, large-context analysis, evidence-intensive papers, and difficult repair, it chooses a suitable execution path, validates the result, and bounds further reasoning and delegation. Automatic discovery stays enabled; tiny writing tasks do not need routing overhead.
 
-The academic workflow is an original synthesis of openly licensed practices. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [references/paper-workflow.md](references/paper-workflow.md) for source commits, licenses, and the integration boundary.
+## Design principle
+
+**Minimize expected total cost per successfully validated task.** Include initial execution plus expected repair, validation, delegation, and escalation. A stronger first attempt can cost less than repeated weak attempts. This is qualitative policy, not a numerical optimizer or measured savings claim.
+
+## Routing architecture
+
+[SKILL.md](SKILL.md) is the lightweight kernel. It loads [routing policy](references/routing-policy.md), [delegation policy](references/delegation-policy.md), [paper workflow](references/paper-workflow.md), and [records](references/records.md) only when relevant.
+
+The task vector separates reasoning, error impact, context volume, tools, ambiguity, verification difficulty, parallelism, and latency sensitivity. Model capability and reasoning effort are separate choices. Luna, Terra, Sol, and Astra are illustrative roles; the actual host inventory, supported effort levels, deprecation status, and current prices govern real choices.
+
+## Policy modes
+
+| Mode | Behavior |
+|---|---|
+| Economy | Prefer economical capable tiers; GPT-6 disabled unless explicitly overridden by model choice |
+| Balanced | Default adaptive route, validation, repair, and gated expert escalation |
+| Deep | Stronger initial reasoning/checks for demanding work; expert gate still applies |
+| Expert | Explicit selection permits direct appropriate expert use; bounded calls remain |
+
+Explicit model choices take precedence when available and permitted. Requested detail does not imply Expert mode. These names are not host UI speed or effort settings.
 
 ## Installation
 
-This repository is a standalone Agent Skill. Keep `SKILL.md` directly inside the `adaptive-model-router` folder. Git clone is the recommended installation; use the host-specific destination below.
-
-The directory conventions and verification commands below follow the [Codex skill documentation](https://learn.chatgpt.com/docs/build-skills), [Claude Code skills documentation](https://code.claude.com/docs/en/skills), and [Gemini CLI Agent Skills documentation](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/using-agent-skills.md).
+Requires Git for clone commands. The skill itself needs no Python or package dependency. Python 3.13+ is used for development validation. Keep SKILL.md directly inside the adaptive-model-router folder.
 
 ### Codex
 
-Current Codex documentation uses `~/.agents/skills` for user skills. Older or locally configured installations may use `$CODEX_HOME/skills`; set `CODEX_SKILLS_DIR` when you want to choose the destination explicitly. Repository-scoped skills go in `.agents/skills`.
+Use the current user layout from the [official Codex skill documentation](https://learn.chatgpt.com/docs/build-skills).
 
-macOS or Linux, user scope:
-
-```bash
-skills_dir="${CODEX_SKILLS_DIR:-${CODEX_HOME:+$CODEX_HOME/skills}}"
-skills_dir="${skills_dir:-$HOME/.agents/skills}"
-mkdir -p "$skills_dir"
-git clone https://github.com/WENSHAO521/adaptive-model-router.git "$skills_dir/adaptive-model-router"
-```
-
-Windows PowerShell, user scope:
-
-```powershell
-$skillsDir = if ($env:CODEX_SKILLS_DIR) {
-  $env:CODEX_SKILLS_DIR
-} elseif ($env:CODEX_HOME) {
-  Join-Path $env:CODEX_HOME "skills"
-} elseif (Test-Path (Join-Path $HOME ".codex\skills")) {
-  Join-Path $HOME ".codex\skills"
-} else {
-  Join-Path $HOME ".agents\skills"
-}
-New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
-git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
-```
-
-Repository scope, from the project root:
-
-```bash
-mkdir -p .agents/skills
-git clone https://github.com/WENSHAO521/adaptive-model-router.git .agents/skills/adaptive-model-router
-```
-
-Update an existing Codex clone:
-
-```bash
-git -C "${CODEX_SKILLS_DIR:-${CODEX_HOME:-$HOME/.agents}/skills}/adaptive-model-router" pull --ff-only
-```
-
-```powershell
-$skillsDir = if ($env:CODEX_SKILLS_DIR) {
-  $env:CODEX_SKILLS_DIR
-} elseif ($env:CODEX_HOME) {
-  Join-Path $env:CODEX_HOME "skills"
-} elseif (Test-Path (Join-Path $HOME ".codex\skills")) {
-  Join-Path $HOME ".codex\skills"
-} else {
-  Join-Path $HOME ".agents\skills"
-}
-git -C (Join-Path $skillsDir "adaptive-model-router") pull --ff-only
-```
-
-Start a new Codex task after installing; restart Codex only if the skill still does not appear.
-
-### Claude Code
-
-Claude Code discovers personal skills from `~/.claude/skills/<skill-name>/SKILL.md` and project skills from `.claude/skills/<skill-name>/SKILL.md`.
-
-macOS or Linux:
-
-```bash
-mkdir -p "$HOME/.claude/skills"
-git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.claude/skills/adaptive-model-router"
-```
-
-Windows PowerShell:
-
-```powershell
-$skillsDir = Join-Path $HOME ".claude\skills"
-New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
-git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
-```
-
-Open Claude Code and run `/skills` to confirm discovery. For a project-only install, clone into `.claude/skills/adaptive-model-router` from that project root.
-
-### Gemini CLI
-
-Gemini CLI provides a direct installer:
-
-```bash
-gemini skills install https://github.com/WENSHAO521/adaptive-model-router
-```
-
-The equivalent user-scope Git clone is:
-
-```bash
-mkdir -p "$HOME/.gemini/skills"
-git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.gemini/skills/adaptive-model-router"
-```
-
-Use `/skills list` to verify it and `/skills reload` after an update. Project-only skills go in `.gemini/skills/adaptive-model-router`.
-
-### Other Agent Skills-compatible tools
-
-Tools that follow the open Agent Skills layout generally accept `~/.agents/skills/<skill-name>/SKILL.md` for user scope or `.agents/skills/<skill-name>/SKILL.md` for project scope:
+macOS/Linux:
 
 ```bash
 mkdir -p "$HOME/.agents/skills"
-git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.agents/skills/adaptive-model-router"
+git clone https://github.com/WENSHAO521/adaptive-model-router.git \
+  "$HOME/.agents/skills/adaptive-model-router"
 ```
 
 Windows PowerShell:
@@ -130,31 +48,131 @@ Windows PowerShell:
 ```powershell
 $skillsDir = Join-Path $HOME ".agents\skills"
 New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+git clone https://github.com/WENSHAO521/adaptive-model-router.git `
+  (Join-Path $skillsDir "adaptive-model-router")
+```
+
+Project scope, from the project root on macOS/Linux:
+
+```bash
+mkdir -p .agents/skills
+git clone https://github.com/WENSHAO521/adaptive-model-router.git \
+  .agents/skills/adaptive-model-router
+```
+
+Windows PowerShell, project scope:
+
+```powershell
+New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
+git clone https://github.com/WENSHAO521/adaptive-model-router.git `
+  ".agents\skills\adaptive-model-router"
+```
+
+Update an existing user clone:
+
+```bash
+git -C "$HOME/.agents/skills/adaptive-model-router" pull --ff-only
+```
+
+```powershell
+git -C (Join-Path $HOME ".agents\skills\adaptive-model-router") pull --ff-only
+```
+
+Compatibility: older or locally configured hosts may load `$CODEX_HOME/skills` or `~/.codex/skills`. Use the actual configured directory for those hosts; do not install duplicate copies into both paths. Restart Codex if the skill is not detected. The optional default prompt includes `$adaptive-model-router` as required by the bundled UI metadata schema; implicit invocation remains enabled, so manual selection is not required for matching tasks.
+
+### Claude Code
+
+The [official skills documentation](https://code.claude.com/docs/en/skills) specifies personal and project directories.
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+git clone https://github.com/WENSHAO521/adaptive-model-router.git "$HOME/.claude/skills/adaptive-model-router"
+```
+
+```powershell
+$skillsDir = Join-Path $HOME ".claude\skills"
+New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
 git clone https://github.com/WENSHAO521/adaptive-model-router.git (Join-Path $skillsDir "adaptive-model-router")
 ```
 
-`agents/openai.yaml` is optional Codex metadata. Other hosts use the shared `SKILL.md` frontmatter and ignore that file when they do not support it.
+Project destination: `.claude/skills/adaptive-model-router`. Start a session and check the skill menu or invoke `/adaptive-model-router`. Local installation does not install it into cloud sessions.
 
-If Git is unavailable, use GitHub's **Code → Download ZIP**, extract the repository, and place its contents in the host's skill directory. Keep `SKILL.md` directly inside the `adaptive-model-router` folder.
+### Gemini CLI
 
-No package manager or Python dependency is required at runtime; the skill is Markdown plus YAML and is loaded from the skills directory.
+The [official Agent Skills guide](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/using-agent-skills.md) provides a user installer (same command in PowerShell and macOS/Linux shells):
 
-## Automatic behavior
+```text
+gemini skills install https://github.com/WENSHAO521/adaptive-model-router
+```
 
-No mode or skill selection is required. `agents/openai.yaml` enables implicit invocation. Explicit `$adaptive-model-router` invocation remains available for troubleshooting or a deliberate rerun, but it is not the normal workflow.
+Add `--scope workspace` for the current project. Use `/skills list` to inspect and `/skills reload` to refresh.
 
-## Contents
+Other Agent Skills-compatible tools need their own documented discovery directory; the shared file layout does not guarantee a universal installation path or OpenAI dispatch. For ZIP installation, use GitHub **Code → Download ZIP** and extract the folder into the host's skill directory. Clone/install commands obtain the remote version, which may differ from an unpublished local working tree.
 
-- `SKILL.md` — automatic routing, delegation, paper workflow, validation, and escalation policy
-- `references/paper-workflow.md` — integrated academic workflow and source boundary
-- `references/records.md` — optional audit record schemas and telemetry guidance
-- `agents/openai.yaml` — display metadata and implicit-invocation policy
-- `THIRD_PARTY_NOTICES.md` — source, license, commit, and attribution record
-- `CHANGELOG.md` — release history
-- `LICENSE` — MIT license for this package
+## How routing works
 
-The skill is guidance for an available Codex dispatch or collaboration surface. It does not itself change the model already running a turn, create GitHub repositories, enforce billing limits, or guarantee that every host exposes the same model IDs.
+Inspect capabilities → respect model choice/mode → reduce irrelevant context → infer task vector → choose capable tier → choose supported effort → apply delegation ROI → execute and validate. Repair only concrete residual defects, usually within two GPT-5-family repair cycles. For reasoning failure, consider higher effort on the same capable model before changing tier. Do not mechanically walk every step or level.
+
+Around 200K/220K/250K input tokens, inspect necessity, prefer selective retrieval, and strongly attempt compaction. These are approximate policy warnings, not provider limits or pricing facts; actual runtime limits and thresholds take precedence. Preserve exact constraints, identifiers, citations, unresolved contradictions, and original source pointers.
+
+Validation states are PASS, PASS_WITH_LIMITATIONS, REPAIR_REQUIRED, BLOCKED_BY_MISSING_EVIDENCE, BLOCKED_BY_TOOL_FAILURE, and ESCALATION_CANDIDATE. Critical failures block a success claim. Tests, builds, source checks, calculations, or document constraints supply evidence; confidence scores do not control escalation.
+
+## Academic workflow
+
+The preserved [paper workflow](references/paper-workflow.md) separates ordinary manuscripts, empirical/computational work, systematic reviews, and sentence-level polishing. It retains verified sources and persistent IDs, version/provenance records, claim-evidence mapping, baseline reproduction, leakage/variance checks, PRISMA-aware reporting, limitations, and reproducibility. Missing citations require retrieval, not an automatic stronger model.
+
+## Delegation
+
+Default zero; use 1–2 leaf agents only when independent work, context reduction, or validation value exceeds coordination and duplicate-token/tool costs. Three is exceptional and slot-limited. One wave, minimal task packets, no recursion, read-only workers by default. Parallel implementation requires confirmed write isolation; root integrates and validates.
+
+## GPT-6 escalation
+
+Except explicit GPT-6/Expert selection, require an actual GPT-5-family attempt, meaningful validation, concrete residual reasoning failure, targeted repair, and a reason more GPT-5.6 effort is inefficient. Long tasks and broken tools are not sufficient. Default one successful Astra dispatch; one additional attempt only under the documented exception, with at most two attempts absent explicit larger authorization. No expert self-review loop.
+
+## Evaluation
+
+From the repository root:
+
+```bash
+python scripts/validate_skill.py
+python -m unittest discover -s tests -v
+git diff --check
+```
+
+The standard-library validator checks required structure, this repository's restricted YAML subset, required frontmatter/metadata, JSONL schemas, duplicate IDs, fenced JSON examples, and local Markdown links. It supports inline and reference-style links outside code fences; it does not check remote URLs, heading anchors, HTML links, or every Markdown/YAML extension. Unsupported YAML constructs fail with a clear error instead of being silently accepted.
+
+Fixtures contain **24 routing**, **8 delegation**, and **10 escalation** cases. They encode policy expectations, not model-quality results. Validation parses and checks fixture consistency; it does not run model calls or prove the policy's behavioral adherence. See the [evaluation contract](references/records.md) for a blinded host evaluation procedure. Unit tests exercise meaningful validator failures with temporary copies.
+
+[GitHub Actions](.github/workflows/validate.yml) runs validation and validator tests on push and pull_request with Python 3.13 and read-only repository permissions. Local validation does not imply a hosted CI run passed.
+
+## Repository structure
+
+```text
+adaptive-model-router/
+  SKILL.md
+  README.md
+  CHANGELOG.md
+  LICENSE
+  THIRD_PARTY_NOTICES.md
+  agents/openai.yaml
+  references/
+    routing-policy.md
+    delegation-policy.md
+    paper-workflow.md
+    records.md
+  evals/
+    routing-cases.jsonl
+    delegation-cases.jsonl
+    escalation-cases.jsonl
+  scripts/validate_skill.py
+  tests/test_validate_skill.py
+  .github/workflows/validate.yml
+```
+
+## Limitations
+
+This is policy and orchestration guidance, not an executable routing service. Dispatch, model inventory, effort controls, context limits, caching, isolation, and prices depend on the host/provider. Other hosts can use the shared instructions but may ignore Codex metadata. No API keys, background jobs, billing enforcement, automatic releases, or benchmark infrastructure are installed. No empirical dollar/token savings or calibrated routing accuracy have been established.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). The integrated workflow contains original wording and attribution to the compatible open-source sources listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT: [LICENSE](LICENSE). Existing academic-source attribution and reviewed commits remain in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Release preparation is recorded in [CHANGELOG.md](CHANGELOG.md).
