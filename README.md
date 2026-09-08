@@ -19,6 +19,8 @@ The academic workflow is an original synthesis of openly licensed practices. See
 
 This repository is a standalone Agent Skill. Keep `SKILL.md` directly inside the `adaptive-model-router` folder. Git clone is the recommended installation; use the host-specific destination below.
 
+The directory conventions and verification commands below follow the [Codex skill documentation](https://learn.chatgpt.com/docs/build-skills), [Claude Code skills documentation](https://code.claude.com/docs/en/skills), and [Gemini CLI Agent Skills documentation](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/using-agent-skills.md).
+
 ### Codex
 
 Current Codex documentation uses `~/.agents/skills` for user skills. Older or locally configured installations may use `$CODEX_HOME/skills`; set `CODEX_SKILLS_DIR` when you want to choose the destination explicitly. Repository-scoped skills go in `.agents/skills`.
