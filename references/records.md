@@ -62,3 +62,33 @@ When runtime telemetry is available, track task count, attempted/successful call
 The user's optional allocation targets are Luna 40–55%, Terra 20–30%, Sol 15–25%, GPT-6 2–8%. These are planning ranges, not benchmarks or quotas. GPT-6 above 10–15% may motivate inspecting routing, retrieval, repair, and duplicated work, but workload mix can justify it. No recurring monitoring is configured by installing this skill.
 
 Suggested rolling task state: project, objective, confirmed_facts, decisions, constraints, completed_work, open_questions, recent_changes. Preserve relevant source pointers and distinguish confirmed facts from assumptions.
+
+## Paper evidence records
+
+Use this compact record when a manuscript task includes source retrieval or claim auditing. Keep unknown values `null`; do not infer bibliographic details from a plausible title or an unresolved URL.
+
+```json
+{
+  "source_key": "",
+  "title": "",
+  "authors": [],
+  "year": null,
+  "venue": null,
+  "identifiers": {
+    "doi": null,
+    "arxiv": null,
+    "openalex": null
+  },
+  "version_status": "unknown",
+  "source_url": null,
+  "checked_at": null,
+  "claims_supported": [],
+  "evidence_locations": [],
+  "access_status": "unknown",
+  "license": null,
+  "verification": "needs-check",
+  "notes": ""
+}
+```
+
+For a claim matrix, use `claim`, `section`, `source_key_or_result`, `evidence_location`, `strength`, `caveat`, and `repair_action`. A `verified` source must have a checked record and a source-backed evidence location; a `needs-check` source must not support a final material claim. Record whether a result was reproduced, quoted from a source, or proposed for future testing.

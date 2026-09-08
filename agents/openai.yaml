@@ -1,6 +1,6 @@
 interface:
   display_name: "Adaptive Model Router"
   short_description: "Automatic routing, paper-writing delegation, and escalation"
-  default_prompt: "Use $adaptive-model-router for automatic model routing, bounded delegation, and final validation."
+  default_prompt: "Apply automatic model routing, bounded delegation, evidence-first paper workflows, and final validation."
 policy:
   allow_implicit_invocation: true

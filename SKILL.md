@@ -1,6 +1,6 @@
 ---
 name: adaptive-model-router
-description: Automatically apply capability-aware GPT-5.6-first routing, bounded subagent delegation, quality repair, and compressed GPT-6 escalation under a model budget.
+description: Automatically apply capability-aware GPT-5.6-first routing, bounded subagent delegation, evidence-first academic paper and literature-review workflows, quality repair, and controlled GPT-6 escalation under a model budget.
 ---
 
 # Adaptive Model Router
@@ -50,8 +50,16 @@ Ordinary rewriting, website copy, email, translation, and academic polishing usu
 
 ## Academic paper writing
 
+Read [references/paper-workflow.md](references/paper-workflow.md) when the task involves drafting, revising, reviewing, translating, or preparing a manuscript. Select its lightest valid branch: ordinary paper, empirical or computational paper, systematic review, or sentence-level language pass. The reference is a synthesis of openly licensed public practices; consult [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) when provenance or license boundaries matter.
+
 When the user is drafting, revising, translating, or preparing a journal manuscript, apply the following workflow automatically. Keep the root agent as the sole author of the integrated manuscript unless an isolated worktree is confirmed.
 
+- Build a compact paper context before expensive synthesis: working title, question, target venue, genre, audience, contribution or delta, evidence status, format constraints, and open questions. Keep confirmed facts separate from assumptions and mark unknowns instead of filling them from memory.
+- For ordinary papers, find the small set of governing sources (usually about 5–15), use source-specific queries, resolve persistent identifiers, record version and provenance, and reopen the original source before quoting or making a material claim. Treat retrieval output as a candidate until it is verified.
+- Maintain a claim-to-evidence matrix with the claim, section, source or result pointer, strength, caveat, and repair action. Every material abstract or introduction claim must map to evidence in the body; do not generalize beyond the observed setting.
+- For empirical or computational work, reproduce the strongest feasible baseline, record data and license, splits, temporal or group boundaries, seeds, configuration, commit, hardware, and metric, audit leakage and test contamination, report variance when feasible, and preserve negative or null results that affect the conclusion.
+- For a systematic review, additionally capture the protocol or registration, review framework, databases and last-search dates, complete search strings, inclusion and exclusion criteria, screening and duplicate counts, records/reports/studies distinctions, risk-of-bias method, synthesis and certainty limits, and applicable PRISMA 2020 checklist items. Use a PRISMA extension when the design requires one; do not apply this branch to an ordinary paper.
+- Before submission, verify citation reality, version and identifier accuracy, claim-to-result coverage, operational definitions, assumptions, limitations, reproducibility fields, figures and tables, venue requirements, and anonymization when relevant. Return exact locations, severity, evidence, and a repair recommendation for material issues.
 - For a new paper, use one delegation wave for separable preparation: evidence/retrieval planning, contribution and theoretical framing, and methods/design review. Use Luna for query planning or metadata filtering, Terra for evidence extraction, and Sol for theory, methodology, and difficult synthesis when those models are available.
 - For an existing draft, use one delegation wave for independent audits: citation-to-claim alignment, argument and methods consistency, and journal/section/style compliance. Each audit must return exact locations, severity, evidence, and a repair recommendation; it must not rewrite the whole manuscript by default.
 - After the wave, the root agent integrates the findings, drafts or repairs the affected sections, preserves the target journal's structure, and runs the final academic-writing validation locally. Reuse the same evidence matrix and do not start another delegation wave for ordinary line edits.
