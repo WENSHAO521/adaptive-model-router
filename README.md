@@ -17,7 +17,7 @@ The academic workflow is an original synthesis of openly licensed practices. See
 
 ## Installation
 
-The mainstream installation is a Git clone into the Codex skills directory. Restart Codex or start a new task after installing so the skill index can refresh.
+The mainstream installation is a Git clone into the Codex skills directory. Start a new Codex task after installing so the skill index can refresh; restart the app only if it is still not detected.
 
 ### macOS or Linux
 
@@ -51,6 +51,8 @@ git -C (Join-Path $skillsDir "adaptive-model-router") pull --ff-only
 ```
 
 If Git is unavailable, use GitHub's **Code → Download ZIP**, extract the repository, and place its contents at `$CODEX_HOME/skills/adaptive-model-router` (normally `C:\Users\<you>\.codex\skills\adaptive-model-router` on Windows). Keep `SKILL.md` directly inside that folder.
+
+No package manager or Python dependency is required at runtime; the skill is Markdown plus YAML and is loaded from the skills directory.
 
 ## Automatic behavior
 
