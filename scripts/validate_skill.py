@@ -12,6 +12,12 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 
+RUNTIME_FILES = (
+    'SKILL.md', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
+    'agents/openai.yaml', 'references/routing-policy.md',
+    'references/delegation-policy.md', 'references/paper-workflow.md',
+    'references/records.md',
+)
 REQUIRED = (
     'SKILL.md', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
     'agents/openai.yaml', 'references/routing-policy.md',
@@ -20,6 +26,8 @@ REQUIRED = (
     'tests/test_validate_skill.py', '.github/workflows/validate.yml',
     'evals/routing-cases.jsonl', 'evals/delegation-cases.jsonl',
     'evals/escalation-cases.jsonl',
+    'VERSION', 'scripts/package_runtime.py', 'tests/test_package_runtime.py',
+    'RELEASE_CHECKLIST.md',
 )
 STATES = {
     'PASS', 'PASS_WITH_LIMITATIONS', 'REPAIR_REQUIRED',
@@ -134,7 +142,39 @@ def local_links(text):
     return links
 
 
-def validate(root):
+def release_version(root):
+    version = (Path(root) / 'VERSION').read_text(encoding='utf-8').strip()
+    if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
+        raise ValueError('VERSION must contain a plain MAJOR.MINOR.PATCH version')
+    return version
+
+
+def is_junction(path):
+    # Path.is_junction() requires Python 3.12+; degrade to symlink-only
+    # detection on older interpreters instead of crashing.
+    check = getattr(path, 'is_junction', None)
+    return bool(check and check())
+
+
+def safe_file(root, relative):
+    """Reject links/reparse junctions and paths outside the requested root."""
+    root = Path(root).resolve()
+    path = root / relative
+    if not path.resolve().is_relative_to(root):
+        raise ValueError(f'outside repository: {relative}')
+    for part in (path, *path.parents):
+        if part == root:
+            break
+        if part.is_symlink() or is_junction(part):
+            raise ValueError(f'linked path is not allowed: {relative}')
+    if not path.is_file():
+        raise ValueError(f'missing required file: {relative}')
+    return path
+
+
+def validate(root, mode='source'):
+    if mode not in {'source', 'runtime'}:
+        raise ValueError('mode must be source or runtime')
     root = Path(root).resolve()
     errors, counts, seen = [], {}, set()
 
@@ -144,13 +184,35 @@ def validate(root):
 
     def read(relative):
         try:
-            return (root / relative).read_text(encoding='utf-8')
-        except (OSError, UnicodeError) as exc:
+            return safe_file(root, relative).read_text(encoding='utf-8')
+        except (OSError, UnicodeError, ValueError) as exc:
             errors.append(f'{relative}: {exc}')
             return None
 
-    for relative in REQUIRED:
+    required = REQUIRED if mode == 'source' else RUNTIME_FILES
+    for relative in required:
         require((root / relative).is_file(), f'missing required file: {relative}')
+
+    if mode == 'source':
+        try:
+            safe_file(root, 'VERSION')
+            version = release_version(root)
+            changelog, readme = read('CHANGELOG.md'), read('README.md')
+            headings = re.findall(r'^## v([0-9]+\.[0-9]+\.[0-9]+)', changelog or '', re.M)
+            require(bool(headings) and headings[0] == version, 'VERSION and latest CHANGELOG entry disagree')
+            require(f'Repository version: **v{version}**' in (readme or ''),
+                    'VERSION and README version statement disagree')
+        except (OSError, UnicodeError, ValueError) as exc:
+            errors.append(f'version: {exc}')
+    else:
+        for path in root.rglob('*'):
+            relative = path.relative_to(root).as_posix()
+            if path.is_symlink() or is_junction(path):
+                errors.append(f'linked runtime path: {relative}')
+            elif path.is_file() and relative not in RUNTIME_FILES:
+                errors.append(f'non-runtime file: {relative}')
+            elif path.is_dir() and relative not in {'agents', 'references'}:
+                errors.append(f'non-runtime directory: {relative}')
 
     skill = read('SKILL.md')
     if skill is not None:
@@ -190,13 +252,13 @@ def validate(root):
                     'openai.yaml: short_description must contain 25–64 characters')
             prompt = interface.get('default_prompt')
             require(isinstance(prompt, str) and '$adaptive-model-router' in prompt,
-                    'openai.yaml: default_prompt must mention $adaptive-model-router')
+                    'openai.yaml: repository policy requires default_prompt to mention $adaptive-model-router')
             require(policy == {'allow_implicit_invocation': True},
                     'openai.yaml: implicit invocation must remain enabled')
         except ValueError as exc:
             errors.append(f'openai.yaml: {exc}')
 
-    for category in ('routing', 'delegation', 'escalation'):
+    for category in (('routing', 'delegation', 'escalation') if mode == 'source' else ()):
         relative = f'evals/{category}-cases.jsonl'
         content = read(relative)
         counts[category] = 0
@@ -252,10 +314,12 @@ def validate(root):
             except (ValueError, TypeError) as exc:
                 errors.append(f'{where}: {exc}')
         require(counts[category] > 0, f'{relative}: no valid cases')
-    require(20 <= counts.get('routing', 0) <= 40, 'routing fixtures must contain 20–40 valid cases')
+    if mode == 'source':
+        require(20 <= counts.get('routing', 0) <= 40, 'routing fixtures must contain 20–40 valid cases')
 
     for path in root.rglob('*.md'):
-        if '.git' in path.relative_to(root).parts:
+        if mode == 'source' and any(part in {'.git', 'dist', '__pycache__'}
+                                    for part in path.relative_to(root).parts):
             continue
         relative = str(path.relative_to(root))
         text = read(relative)
@@ -279,16 +343,18 @@ def validate(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--mode', choices=('source', 'runtime'), default='source')
     args = parser.parse_args()
-    errors, counts = validate(args.root)
+    errors, counts = validate(args.root, args.mode)
     if errors:
         for error in errors:
             print(f'ERROR: {error}')
         print(f'FAIL: {len(errors)} issue(s)')
         return 1
-    print('PASS: structure, YAML subset, JSON examples, local links, and fixture schemas')
-    print(', '.join(f'{name}={count}' for name, count in counts.items()))
-    print('Policy fixtures checked; no model-quality or cost benchmark executed.')
+    print(f'PASS ({args.mode}): structure, YAML subset, JSON examples, and local links')
+    if counts:
+        print(', '.join(f'{name}={count}' for name, count in counts.items()))
+        print('Policy fixtures checked; no model-quality or cost benchmark executed.')
     return 0
 
 
